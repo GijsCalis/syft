@@ -89,7 +89,7 @@ func isMavenAvailable() bool {
 
 	// Only check for Maven on first call
 	if !checkedForMaven {
-		cmd := exec.Command("mvn123", "-v")
+		cmd := exec.Command("mvn", "-v")
 		_, err := cmd.Output()
 
 		if err == nil {
