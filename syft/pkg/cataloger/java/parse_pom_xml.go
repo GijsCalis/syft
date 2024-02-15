@@ -6,6 +6,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -23,9 +26,40 @@ import (
 
 const pomXMLGlob = "*pom.xml"
 
+var checkedForMaven bool = false
+var mavenAvailable bool = false
+
 var propertyMatcher = regexp.MustCompile("[$][{][^}]+[}]")
 
 func (gap genericArchiveParserAdapter) parserPomXML(ctx context.Context, _ file.Resolver, _ *generic.Environment, reader file.LocationReadCloser) ([]pkg.Package, []artifact.Relationship, error) {
+
+	var pom string = string(reader.Reference().RealPath.Normalize())
+	var effectivePom string = filepath.Join(filepath.Dir(pom), "target", "effective-pom.xml")
+
+	log.Tracef("Found POM in dir: %q", filepath.Dir(pom))
+
+	if isMavenAvailable() {
+		generateEffectivePom(pom)
+
+		var pomReader io.ReadCloser
+		pomReader, err := os.Open(effectivePom)
+
+		if err != nil {
+			log.Errorf("Could not open file %q : %w", effectivePom, err)
+		}
+
+		var pomLocation file.Location = file.NewLocation(effectivePom)
+
+		reader = file.NewLocationReadCloser(pomLocation, pomReader)
+		log.Debugf("Parsing effective POM: %q", effectivePom)
+	} else {
+		log.Debugf("Parsing unresolved POM: %q", pom)
+	}
+
+	return parserPomXML(ctx, reader, gap)
+}
+
+func parserPomXML(ctx context.Context, reader file.LocationReadCloser, gap genericArchiveParserAdapter) ([]pkg.Package, []artifact.Relationship, error) {
 	pom, err := decodePomXML(reader)
 	if err != nil {
 		return nil, nil, err
@@ -48,8 +82,39 @@ func (gap genericArchiveParserAdapter) parserPomXML(ctx context.Context, _ file.
 			pkgs = append(pkgs, p)
 		}
 	}
-
 	return pkgs, nil, nil
+}
+
+func isMavenAvailable() bool {
+
+	// Only check for Maven on first call
+	if !checkedForMaven {
+		cmd := exec.Command("mvn123", "-v")
+		_, err := cmd.Output()
+
+		if err == nil {
+			log.Trace("Maven is available.")
+			mavenAvailable = true
+		} else {
+			log.Warn("Maven is not available java pom.xml file analysis might be incomplete/incorrect!")
+		}
+		checkedForMaven = true
+	}
+
+	return mavenAvailable
+}
+
+func generateEffectivePom(pomFile string) {
+	log.Debugf("Generating effective POM for: %q", pomFile)
+
+	cmd := exec.Command("mvn", "help:effective-pom", "--non-recursive", "-Doutput=target/effective-pom.xml", "--file", pomFile) // #nosec G204
+	output, err := cmd.Output()
+
+	if err != nil {
+		log.Errorf("failed to execute command: %q: %+v", cmd, err)
+		log.Debug(string(output))
+	}
+	log.Trace(string(output))
 }
 
 func parsePomXMLProject(path string, reader io.Reader, location file.Location) (*parsedPomProject, error) {
