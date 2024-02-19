@@ -38,8 +38,8 @@ func (gap genericArchiveParserAdapter) parserPomXML(ctx context.Context, _ file.
 
 	log.Tracef("Found POM in dir: %q", filepath.Dir(pom))
 
-	if isMavenAvailable() {
-		generateEffectivePom(pom)
+	if gap.cfg.UseMaven && isMavenAvailable() {
+		generateEffectivePom(pom, effectivePom, gap.cfg.UseNetwork)
 
 		var pomReader io.ReadCloser
 		pomReader, err := os.Open(effectivePom)
@@ -80,6 +80,13 @@ func parserPomXML(ctx context.Context, reader file.LocationReadCloser, gap gener
 			}
 
 			pkgs = append(pkgs, p)
+
+			if len(p.Version) == 0 || strings.HasPrefix(p.Version, "${") {
+				groupId := *dep.GroupID
+				artifactId := *dep.ArtifactID
+				artifact := groupId + ":" + artifactId
+				log.Infof("Found artifact without version: %q, version: %q", artifact, p.Version)
+			}
 		}
 	}
 	return pkgs, nil, nil
@@ -104,10 +111,18 @@ func isMavenAvailable() bool {
 	return mavenAvailable
 }
 
-func generateEffectivePom(pomFile string) {
+func generateEffectivePom(pomFile string, effectivePomFile string, useNetwork bool) {
 	log.Debugf("Generating effective POM for: %q", pomFile)
 
-	cmd := exec.Command("mvn", "help:effective-pom", "--non-recursive", "-Doutput=target/effective-pom.xml", "--file", pomFile) // #nosec G204
+	var args = []string{"help:effective-pom", "--non-recursive"}
+
+	if !useNetwork {
+		args = append(args, "--offline")
+	}
+
+	args = append(args, "-Doutput="+effectivePomFile, "--file", pomFile)
+
+	cmd := exec.Command("mvn", args...) // #nosec G204
 	output, err := cmd.Output()
 
 	if err != nil {

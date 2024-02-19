@@ -150,6 +150,7 @@ func (cfg Catalog) ToPackagesConfig() pkgcataloging.Config {
 		},
 		JavaArchive: java.DefaultArchiveCatalogerConfig().
 			WithUseNetwork(cfg.Java.UseNetwork).
+			WithUseMaven(cfg.Java.UseMaven).
 			WithMavenBaseURL(cfg.Java.MavenURL).
 			WithArchiveTraversal(archiveSearch, cfg.Java.MaxParentRecursiveDepth),
 	}
