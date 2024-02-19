@@ -244,6 +244,26 @@ func decodePomXML(content io.Reader) (project gopom.Project, err error) {
 		return project, fmt.Errorf("unable to unmarshal pom.xml: %w", err)
 	}
 
+	// For modules groupID and version are almost always inherited from parent pom
+	if project.GroupID == nil && project.Parent != nil {
+		project.GroupID = project.Parent.GroupID
+	}
+	if project.Version == nil && project.Parent != nil {
+		project.Version = project.Parent.Version
+	}
+
+	// If missing, add maven built-in version property often used in multi-module projects
+	if project.Version != nil {
+		if project.Properties == nil {
+			var props gopom.Properties
+			props.Entries = make(map[string]string)
+			props.Entries["project.version"] = *project.Version
+			project.Properties = &props
+		} else {
+			project.Properties.Entries["project.version"] = *project.Version
+		}
+	}
+
 	return project, nil
 }
 
