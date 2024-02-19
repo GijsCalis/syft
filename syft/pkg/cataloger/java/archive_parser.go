@@ -61,6 +61,11 @@ func newGenericArchiveParserAdapter(cfg ArchiveCatalogerConfig) genericArchivePa
 
 // parseJavaArchive is a parser function for java archive contents, returning all Java libraries and nested archives.
 func (gap genericArchiveParserAdapter) parseJavaArchive(ctx context.Context, _ file.Resolver, _ *generic.Environment, reader file.LocationReadCloser) ([]pkg.Package, []artifact.Relationship, error) {
+	archiveFilename := string(reader.Reference().RealPath.Normalize())
+	if archiveFilename == "/" {
+		archiveFilename = reader.AccessPath
+	}
+	log.Tracef("Processing Java archive: '%q'", archiveFilename)
 	parser, cleanupFn, err := newJavaArchiveParser(reader, true, gap.cfg)
 	// note: even on error, we should always run cleanup functions
 	defer cleanupFn()
@@ -283,7 +288,11 @@ type parsedPomProject struct {
 
 func (j *archiveParser) guessMainPackageNameAndVersionFromPomInfo(ctx context.Context) (name, version string, licenses []pkg.License) {
 	pomPropertyMatches := j.fileManifest.GlobMatch(false, pomPropertiesGlob)
+	log.Tracef("properties files in archive %s:", strings.Join(pomPropertyMatches, ", "))
+
 	pomMatches := j.fileManifest.GlobMatch(false, pomXMLGlob)
+	log.Tracef("pom.xml files archive %s:", strings.Join(pomMatches, ", "))
+
 	var pomPropertiesObject pkg.JavaPomProperties
 	var pomProjectObject *parsedPomProject
 
