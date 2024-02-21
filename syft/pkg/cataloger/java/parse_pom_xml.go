@@ -38,6 +38,8 @@ func (gap genericArchiveParserAdapter) parserPomXML(ctx context.Context, _ file.
 
 	log.Tracef("Found POM in dir: %q", filepath.Dir(pom))
 
+	trueLocation := reader.Location
+
 	if gap.cfg.UseMaven && isMavenAvailable() {
 		generateEffectivePom(pom, effectivePom, gap.cfg.UseNetwork)
 
@@ -56,10 +58,11 @@ func (gap genericArchiveParserAdapter) parserPomXML(ctx context.Context, _ file.
 		log.Debugf("Parsing unresolved POM: %q", pom)
 	}
 
-	return parserPomXML(ctx, reader, gap)
+	return parserPomXML(ctx, reader, gap, trueLocation)
 }
 
-func parserPomXML(ctx context.Context, reader file.LocationReadCloser, gap genericArchiveParserAdapter) ([]pkg.Package, []artifact.Relationship, error) {
+// Parse pom file, when an effective pom file was generated, originalPom points to the original pom file
+func parserPomXML(ctx context.Context, reader file.LocationReadCloser, gap genericArchiveParserAdapter, originalPom file.Location) ([]pkg.Package, []artifact.Relationship, error) {
 	pom, err := decodePomXML(reader)
 	if err != nil {
 		return nil, nil, err
@@ -68,12 +71,19 @@ func parserPomXML(ctx context.Context, reader file.LocationReadCloser, gap gener
 	var pkgs []pkg.Package
 	if pom.Dependencies != nil {
 		for _, dep := range *pom.Dependencies {
+			var location file.Location
+			if originalPom.Coordinates != reader.Location.Coordinates {
+				location = originalPom
+			} else {
+				location = reader.Location.WithAnnotation(pkg.EvidenceAnnotationKey, pkg.PrimaryEvidenceAnnotation)
+			}
+
 			p := newPackageFromPom(
 				ctx,
 				pom,
 				dep,
 				gap.cfg,
-				reader.Location.WithAnnotation(pkg.EvidenceAnnotationKey, pkg.PrimaryEvidenceAnnotation),
+				location,
 			)
 			if p.Name == "" {
 				continue
