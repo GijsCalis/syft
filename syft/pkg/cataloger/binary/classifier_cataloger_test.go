@@ -49,6 +49,17 @@ func Test_Cataloger_PositiveCases(t *testing.T) {
 			},
 		},
 		{
+			logicalFixture: "arangodb/3.12.0-2/linux-amd64",
+			expected: pkg.Package{
+				Name:      "arangodb",
+				Version:   "3.12.0-2",
+				Type:      "binary",
+				PURL:      "pkg:generic/arangodb@3.12.0-2",
+				Locations: locations("arangosh"),
+				Metadata:  metadata("arangodb-binary"),
+			},
+		},
+		{
 			logicalFixture: "postgres/15beta4/linux-amd64",
 			expected: pkg.Package{
 				Name:      "postgresql",
@@ -617,6 +628,16 @@ func Test_Cataloger_PositiveCases(t *testing.T) {
 			},
 		},
 		{
+			logicalFixture: `util-linux/2.37.4/linux-amd64`,
+			expected: pkg.Package{
+				Name:      "util-linux",
+				Version:   "2.37.4",
+				PURL:      "pkg:generic/util-linux@2.37.4",
+				Locations: locations("getopt"),
+				Metadata:  metadata("util-linux-binary"),
+			},
+		},
+		{
 			logicalFixture: "java-jre-openjdk/1.8.0_352-b08/linux-amd64",
 			expected: pkg.Package{
 				Name:      "java/jre",
@@ -887,6 +908,17 @@ func Test_Cataloger_PositiveCases(t *testing.T) {
 			},
 		},
 		{
+			logicalFixture: "erlang/27.0/linux-amd64",
+			expected: pkg.Package{
+				Name:      "erlang",
+				Version:   "27.0",
+				Type:      "binary",
+				PURL:      "pkg:generic/erlang@27.0",
+				Locations: locations("beam.smp"),
+				Metadata:  metadata("erlang-alpine-binary"),
+			},
+		},
+		{
 			logicalFixture: "nginx/1.25.1/linux-amd64",
 			expected: pkg.Package{
 				Name:      "nginx",
@@ -950,6 +982,28 @@ func Test_Cataloger_PositiveCases(t *testing.T) {
 				PURL:      "pkg:generic/gcc@12.3.0",
 				Locations: locations("gcc"),
 				Metadata:  metadata("gcc-binary"),
+			},
+		},
+		{
+			logicalFixture: "fluent-bit/3.0.2/linux-amd64",
+			expected: pkg.Package{
+				Name:      "fluent-bit",
+				Version:   "3.0.2",
+				Type:      "binary",
+				PURL:      "pkg:github/fluent/fluent-bit@3.0.2",
+				Locations: locations("fluent-bit"),
+				Metadata:  metadata("fluent-bit-binary"),
+			},
+		},
+		{
+			logicalFixture: "fluent-bit/2.2.1/linux-arm64",
+			expected: pkg.Package{
+				Name:      "fluent-bit",
+				Version:   "2.2.1",
+				Type:      "binary",
+				PURL:      "pkg:github/fluent/fluent-bit@2.2.1",
+				Locations: locations("fluent-bit"),
+				Metadata:  metadata("fluent-bit-binary"),
 			},
 		},
 		{

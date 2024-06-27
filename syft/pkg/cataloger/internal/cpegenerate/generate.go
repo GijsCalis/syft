@@ -96,6 +96,13 @@ func FromDictionaryFind(p pkg.Package) ([]cpe.CPE, bool) {
 	case pkg.GoModulePkg:
 		cpes, ok = dict.EcosystemPackages[dictionary.EcosystemGoModules][p.Name]
 
+	case pkg.WordpressPluginPkg:
+		metadata, valid := p.Metadata.(pkg.WordpressPluginEntry)
+		if !valid {
+			return parsedCPEs, false
+		}
+		cpes, ok = dict.EcosystemPackages[dictionary.EcosystemWordpressPlugins][metadata.PluginInstallDirectory]
+
 	default:
 		// The dictionary doesn't support this package type yet.
 		return parsedCPEs, false
@@ -129,23 +136,26 @@ func FromDictionaryFind(p pkg.Package) ([]cpe.CPE, bool) {
 func FromPackageAttributes(p pkg.Package) []cpe.CPE {
 	vendors := candidateVendors(p)
 	products := candidateProducts(p)
+	targetSWs := candidateTargetSw(p)
 	if len(products) == 0 {
 		return nil
 	}
 
 	keys := strset.New()
 	cpes := make([]cpe.Attributes, 0)
-	for _, product := range products {
-		for _, vendor := range vendors {
-			// prevent duplicate entries...
-			key := fmt.Sprintf("%s|%s|%s", product, vendor, p.Version)
-			if keys.Has(key) {
-				continue
-			}
-			keys.Add(key)
-			// add a new entry...
-			if c := newCPE(product, vendor, p.Version, cpe.Any); c != nil {
-				cpes = append(cpes, *c)
+	for _, ts := range targetSWs {
+		for _, product := range products {
+			for _, vendor := range vendors {
+				// prevent duplicate entries...
+				key := fmt.Sprintf("%s|%s|%s|%s", product, vendor, p.Version, ts)
+				if keys.Has(key) {
+					continue
+				}
+				keys.Add(key)
+				// add a new entry...
+				if c := newCPE(product, vendor, p.Version, ts); c != nil {
+					cpes = append(cpes, *c)
+				}
 			}
 		}
 	}
@@ -160,6 +170,13 @@ func FromPackageAttributes(p pkg.Package) []cpe.CPE {
 	}
 
 	return result
+}
+
+func candidateTargetSw(p pkg.Package) []string {
+	if p.Type == pkg.WordpressPluginPkg {
+		return []string{"wordpress"}
+	}
+	return []string{cpe.Any}
 }
 
 //nolint:funlen
