@@ -21,12 +21,14 @@ const (
 	Haskell         Language = "haskell"
 	Java            Language = "java"
 	JavaScript      Language = "javascript"
+	Lua             Language = "lua"
 	PHP             Language = "php"
 	Python          Language = "python"
 	R               Language = "R"
 	Ruby            Language = "ruby"
 	Rust            Language = "rust"
 	Swift           Language = "swift"
+	Swipl           Language = "swipl"
 )
 
 // AllLanguages is a set of all programming languages detected by syft.
@@ -40,12 +42,14 @@ var AllLanguages = []Language{
 	Haskell,
 	Java,
 	JavaScript,
+	Lua,
 	PHP,
 	Python,
 	R,
 	Ruby,
 	Rust,
 	Swift,
+	Swipl,
 }
 
 // String returns the string representation of the language.
@@ -72,6 +76,8 @@ func LanguageByName(name string) Language {
 		return Go
 	case packageurl.TypeNPM, string(JavaScript), "nodejs", "node.js":
 		return JavaScript
+	case packageurl.TypeLuaRocks, string(Lua):
+		return Lua
 	case packageurl.TypePyPi, string(Python):
 		return Python
 	case packageurl.TypeGem, string(Ruby):
@@ -84,6 +90,8 @@ func LanguageByName(name string) Language {
 		return Dotnet
 	case packageurl.TypeCocoapods, packageurl.TypeSwift, string(CocoapodsPkg):
 		return Swift
+	case "swipl", string(SwiplPackPkg):
+		return Swipl
 	case packageurl.TypeConan, string(CPP):
 		return CPP
 	case packageurl.TypeHackage, string(Haskell):

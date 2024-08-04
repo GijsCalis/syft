@@ -1,6 +1,7 @@
 package relationship
 
 import (
+	"reflect"
 	"slices"
 
 	"github.com/anchore/syft/internal/sbomsync"
@@ -21,9 +22,13 @@ var (
 	binaryCatalogerTypes = []pkg.Type{
 		pkg.BinaryPkg,
 	}
+	binaryMetadataTypes = []string{
+		reflect.TypeOf(pkg.ELFBinaryPackageNoteJSONPayload{}).Name(),
+		reflect.TypeOf(pkg.BinarySignature{}).Name(),
+	}
 )
 
-func excludeBinariesByFileOwnershipOverlap(accessor sbomsync.Accessor) {
+func ExcludeBinariesByFileOwnershipOverlap(accessor sbomsync.Accessor) {
 	accessor.WriteToSBOM(func(s *sbom.SBOM) {
 		for _, r := range s.Relationships {
 			if excludeBinaryByFileOwnershipOverlap(r, s.Artifacts.Packages) {
@@ -60,5 +65,15 @@ func excludeBinaryByFileOwnershipOverlap(r artifact.Relationship, c *pkg.Collect
 		return false
 	}
 
-	return slices.Contains(binaryCatalogerTypes, child.Type)
+	if slices.Contains(binaryCatalogerTypes, child.Type) {
+		return true
+	}
+
+	if child.Metadata == nil {
+		return false
+	}
+
+	childMetadataType := reflect.TypeOf(child.Metadata)
+
+	return slices.Contains(binaryMetadataTypes, childMetadataType.Name())
 }

@@ -2,6 +2,7 @@ package binary
 
 import (
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -225,7 +226,6 @@ func TestNewDependencyRelationships(t *testing.T) {
 			resolver:        nil,
 			coordinateIndex: map[file.Coordinates]file.Executable{},
 			packages:        []pkg.Package{},
-			want:            make([]artifact.Relationship, 0),
 		},
 		{
 			name: "given a package that imports glibc, expect a relationship between the two packages when the package is an executable",
@@ -297,7 +297,6 @@ func TestNewDependencyRelationships(t *testing.T) {
 					Type: artifact.DependencyOfRelationship,
 				},
 			},
-			want: []artifact.Relationship{},
 		},
 		{
 			name:     "given a package that imports a library that is not tracked by the resolver, expect no relationships to be created",
@@ -308,7 +307,6 @@ func TestNewDependencyRelationships(t *testing.T) {
 				parallelLibCoordinate: syftTestFixtureExecutable2,
 			},
 			packages: []pkg.Package{glibCPackage, syftTestFixturePackage},
-			want:     []artifact.Relationship{},
 		},
 	}
 	for _, tt := range tests {
@@ -331,7 +329,20 @@ func relationshipComparer(x, y []artifact.Relationship) string {
 		artifact.Relationship{},
 		file.LocationSet{},
 		pkg.LicenseSet{},
-	))
+	), cmpopts.SortSlices(lessRelationships))
+}
+
+func lessRelationships(r1, r2 artifact.Relationship) bool {
+	c := strings.Compare(string(r1.Type), string(r2.Type))
+	if c != 0 {
+		return c < 0
+	}
+	c = strings.Compare(string(r1.From.ID()), string(r2.From.ID()))
+	if c != 0 {
+		return c < 0
+	}
+	c = strings.Compare(string(r1.To.ID()), string(r2.To.ID()))
+	return c < 0
 }
 
 func newAccessor(pkgs []pkg.Package, coordinateIndex map[file.Coordinates]file.Executable, preexistingRelationships []artifact.Relationship) sbomsync.Accessor {

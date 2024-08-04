@@ -174,6 +174,15 @@ func DefaultClassifiers() []Classifier {
 			CPEs:    singleCPE("cpe:2.3:a:busybox:busybox:*:*:*:*:*:*:*:*"),
 		},
 		{
+			Class:    "util-linux-binary",
+			FileGlob: "**/getopt",
+			EvidenceMatcher: FileContentsVersionMatcher(
+				`\x00util-linux\s(?P<version>[0-9]+\.[0-9]+\.[0-9]+)\x00`),
+			Package: "util-linux",
+			PURL:    mustPURL("pkg:generic/util-linux@version"),
+			CPEs:    singleCPE("cpe:2.3:a:kernel:util-linux:*:*:*:*:*:*:*:*"),
+		},
+		{
 			Class:    "haproxy-binary",
 			FileGlob: "**/haproxy",
 			EvidenceMatcher: evidenceMatchers(
@@ -254,7 +263,8 @@ func DefaultClassifiers() []Classifier {
 			EvidenceMatcher: FileContentsVersionMatcher(
 				// [NUL]v1.7.34[NUL]
 				// [NUL]2.9.6[NUL]
-				`(?m)(\x00|\x{FFFD})v?(?P<version>[0-9]+\.[0-9]+\.[0-9]+(-alpha[0-9]|-beta[0-9]|-rc[0-9])?)\x00`),
+				// 3.0.4[NUL]
+				`(?m)(\x00|\x{FFFD})?v?(?P<version>[0-9]+\.[0-9]+\.[0-9]+(-alpha[0-9]|-beta[0-9]|-rc[0-9])?)\x00`),
 			Package: "traefik",
 			PURL:    mustPURL("pkg:generic/traefik@version"),
 			CPEs:    singleCPE("cpe:2.3:a:traefik:traefik:*:*:*:*:*:*:*:*"),
@@ -263,7 +273,7 @@ func DefaultClassifiers() []Classifier {
 			Class:    "arangodb-binary",
 			FileGlob: "**/arangosh",
 			EvidenceMatcher: FileContentsVersionMatcher(
-				`(?m)ArangoDB\s\x00*(?P<version>[0-9]+\.[0-9]+\.[0-9]+)\s\[linux\]`),
+				`(?m)\x00*(?P<version>[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?)\s\[linux\]`),
 			Package: "arangodb",
 			PURL:    mustPURL("pkg:generic/arangodb@version"),
 			CPEs:    singleCPE("cpe:2.3:a:arangodb:arangodb:*:*:*:*:*:*:*:*"),
@@ -385,6 +395,23 @@ func DefaultClassifiers() []Classifier {
 			CPEs:    singleCPE("cpe:2.3:a:erlang:erlang\\/otp:*:*:*:*:*:*:*:*"),
 		},
 		{
+			Class:    "erlang-alpine-binary",
+			FileGlob: "**/beam.smp",
+			EvidenceMatcher: evidenceMatchers(
+				FileContentsVersionMatcher(
+					// <artificial>[NUL]/usr/src/otp_src_25.3.2.6/erts/
+					`(?m)/src/otp_src_(?P<version>[0-9]+\.[0-9]+(\.[0-9]+){0,2}(-rc[0-9])?)/erts/`,
+				),
+				FileContentsVersionMatcher(
+					// <artificial>[NUL]/usr/local/src/otp-25.3.2.7/erts/
+					`(?m)/usr/local/src/otp-(?P<version>[0-9]+\.[0-9]+(\.[0-9]+){0,2}(-rc[0-9])?)/erts/`,
+				),
+			),
+			Package: "erlang",
+			PURL:    mustPURL("pkg:generic/erlang@version"),
+			CPEs:    singleCPE("cpe:2.3:a:erlang:erlang\\/otp:*:*:*:*:*:*:*:*"),
+		},
+		{
 			Class:    "erlang-library",
 			FileGlob: "**/liberts_internal.a",
 			EvidenceMatcher: evidenceMatchers(
@@ -399,6 +426,16 @@ func DefaultClassifiers() []Classifier {
 			),
 			Package: "erlang",
 			PURL:    mustPURL("pkg:generic/erlang@version"),
+			CPEs:    singleCPE("cpe:2.3:a:erlang:erlang\\/otp:*:*:*:*:*:*:*:*"),
+		},
+		{
+			Class:    "swipl-binary",
+			FileGlob: "**/swipl",
+			EvidenceMatcher: FileContentsVersionMatcher(
+				`(?m)swipl-(?P<version>[0-9]+\.[0-9]+\.[0-9]+)\/`,
+			),
+			Package: "swipl",
+			PURL:    mustPURL("pkg:generic/swipl@version"),
 			CPEs:    singleCPE("cpe:2.3:a:erlang:erlang\\/otp:*:*:*:*:*:*:*:*"),
 		},
 		{
@@ -463,6 +500,19 @@ func DefaultClassifiers() []Classifier {
 			Package: "gcc",
 			PURL:    mustPURL("pkg:generic/gcc@version"),
 			CPEs:    singleCPE("cpe:2.3:a:gnu:gcc:*:*:*:*:*:*:*:*"),
+		},
+		{
+			Class:    "fluent-bit-binary",
+			FileGlob: "**/fluent-bit",
+			EvidenceMatcher: FileContentsVersionMatcher(
+				// [NUL]3.0.2[NUL]%sFluent Bit
+				// [NUL]2.2.3[NUL]Fluent Bit
+				// [NUL]2.2.1[NUL][NUL][NUL]Fluent Bit
+				`\x00(?P<version>[0-9]+\.[0-9]+\.[0-9]+)\x00[^\d]*Fluent`,
+			),
+			Package: "fluent-bit",
+			PURL:    mustPURL("pkg:github/fluent/fluent-bit@version"),
+			CPEs:    singleCPE("cpe:2.3:a:treasuredata:fluent_bit:*:*:*:*:*:*:*:*"),
 		},
 		{
 			Class:    "wordpress-cli-binary",
